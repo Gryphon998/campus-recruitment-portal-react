@@ -1,11 +1,38 @@
-import { signInWithRedirect } from '@aws-amplify/auth'
+import { useEffect, useState } from 'react'
+import { getCurrentUser, signInWithRedirect } from '@aws-amplify/auth'
+import { useNavigate } from 'react-router-dom'
 
 function HomePage() {
+  const navigate = useNavigate()
+  const [errorMessage, setErrorMessage] = useState('')
+
+  useEffect(() => {
+    const checkSignedInUser = async () => {
+      try {
+        await getCurrentUser()
+        navigate('/auth/callback', { replace: true })
+      } catch {
+        // No signed-in user, stay on login page.
+      }
+    }
+
+    void checkSignedInUser()
+  }, [navigate])
+
   const handleGoogleLogin = async () => {
+    setErrorMessage('')
+
     try {
       await signInWithRedirect({ provider: 'Google' })
     } catch (error) {
-      console.error('Google 登录跳转失败:', error)
+      console.error('Google login redirect failed:', error)
+      const message = error instanceof Error ? error.message : 'Google login redirect failed.'
+      if (message.includes('There is already a signed in user')) {
+        navigate('/auth/callback', { replace: true })
+        return
+      }
+
+      setErrorMessage(`${message} Please check Cognito callback URL settings.`)
     }
   }
 
@@ -15,11 +42,10 @@ function HomePage() {
         <p className="mb-2 inline-flex rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold tracking-wide text-indigo-700">
           Campus Recruitment Portal
         </p>
-        <h1 className="mt-2 text-3xl font-bold text-slate-800">
-          使用 Google 登录继续
-        </h1>
+        <h1 className="mt-2 text-3xl font-bold text-slate-800">Continue with Google</h1>
         <p className="mt-3 text-sm text-slate-600">
-          登录后会自动跳转到回调页，Amplify 将自动处理 OAuth code。
+          After sign-in, you will be redirected to callback page and Amplify will process the OAuth
+          code.
         </p>
 
         <button
@@ -50,8 +76,10 @@ function HomePage() {
               d="M24 48c6.3 0 11.6-2.1 15.4-5.8l-7-5.4c-2 1.4-4.6 2.2-8.4 2.2-6.3 0-11.6-3.7-13.5-9.9l-7.9 6.1C6.5 42.6 14.6 48 24 48z"
             />
           </svg>
-          使用 Google 账号登录
+          Sign in with Google
         </button>
+
+        {errorMessage ? <p className="mt-4 text-sm text-red-600">{errorMessage}</p> : null}
       </div>
     </div>
   )

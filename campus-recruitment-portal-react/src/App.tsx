@@ -10,6 +10,7 @@ function App() {
     const userPoolId = import.meta.env.VITE_COGNITO_USER_POOL_ID
     const userPoolClientId = import.meta.env.VITE_COGNITO_USER_POOL_CLIENT_ID
     const cognitoDomain = import.meta.env.VITE_COGNITO_DOMAIN
+    const appOrigin = window.location.origin
 
     if (!region || !userPoolId || !userPoolClientId || !cognitoDomain) {
       console.warn('Amplify Auth 未完成配置，请检查 VITE_ 环境变量。')
@@ -25,8 +26,8 @@ function App() {
             oauth: {
               domain: import.meta.env.VITE_COGNITO_DOMAIN,
               scopes: ['email', 'openid', 'profile'],
-              redirectSignIn: ['http://localhost:3000/auth/callback'],
-              redirectSignOut: ['http://localhost:3000/'],
+              redirectSignIn: [`${appOrigin}/auth/callback`],
+              redirectSignOut: [`${appOrigin}/`],
               responseType: 'code'
             }
           }
